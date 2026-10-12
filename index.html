@@ -47,9 +47,9 @@ h1{font-size:1.5rem;font-weight:700}
 <body>
 <div class="container">
 <header>
-<h1>🛡️ VPN каталог с пробным периодом (by mixqzero aka kqxsrz)</h1>
+<h1>🛡️ VPN с пробным периодом (by mixqzero aka kqxsrz)</h1>
 <div class="controls">
-<button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
+<button class="theme-btn" id="themeBtn">🌙 Тема</button>
 <!-- Кнопка админки убрана -->
 </div>
 </header>
@@ -104,7 +104,7 @@ if(!list.length){c.innerHTML=services.length?'<div class="empty">Ничего н
 
 c.innerHTML=list.map(s=>{
 const trial=s.trial_days!==null&&s.trial_days!==undefined?`${s.trial_days} дн.`:'Не указано';
-const warn=s.category==='free'?'<div class="warn-banner">⚠️ Бесплатный VPN — используйте с осторожностью</div>':'';
+const warn=s.category==='free'?'<div class="warn-banner">🤑 Бесплатный VPN, а значит может работать нестабильн или же вовсе не работать</div>':'';
 const newBadge=isNew(s.created_at)?`<span class="new-badge" title="Добавлен: ${formatDate(s.created_at)}">🆕 Новое</span>`:'';
 const visited=isVisited(s.id)?`<span class="visited-mark">✓ Переходили</span>`:'';
 const addedDate=`<span class="added-date">Добавлен: ${formatDate(s.created_at)}</span>`;
