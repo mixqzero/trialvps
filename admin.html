@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Админка — VPN Каталог</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f7;--card:#fff;--text:#1a1a2e;--muted:#6b7280;--accent:#4f46e5;--border:#e5e7eb;--danger:#dc2626;--success:#16a34a}
+.dark{--bg:#0f0f1a;--card:#1a1a2e;--text:#e5e7eb;--muted:#9ca3af;--accent:#818cf8;--border:#2d2d44}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+.container{max-width:720px;margin:0 auto;padding:20px 16px}
+.login-box{max-width:360px;margin:80px auto;text-align:center}
+.login-box input{width:100%;padding:12px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:1rem;margin:12px 0;outline:none}
+.login-box input:focus{border-color:var(--accent)}
+.btn{padding:10px 24px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-size:.95rem;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-danger{background:var(--danger)}
+.btn-sm{padding:6px 14px;font-size:.82rem;border-radius:8px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.import-area{width:100%;min-height:120px;padding:10px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-family:monospace;font-size:.85rem;resize:vertical;margin-bottom:10px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;color:var(--muted)}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text);font-size:.9rem;outline:none;font-family:inherit}
+.form-group textarea{resize:vertical;min-height:60px}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent)}
+.item-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.item-actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.msg{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-size:.88rem}
+.msg-ok{background:#dcfce7;color:#166534;border:1px solid #86efac}
+.msg-err{background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.dark .msg-ok{background:#14532d;color:#86efac}
+.dark .msg-err{background:#7f1d1d;color:#fca5a5}
+.hidden{display:none!important}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:.85rem}
+.back-link{color:var(--accent);text-decoration:none;font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="container">
+<!-- LOGIN -->
+<div id="loginView" class="login-box">
+<h2>🔐 Вход в админку</h2>
+<input type="password" id="passInput" placeholder="Пароль">
+<button class="btn" onclick="doLogin()">Войти</button>
+<p id="loginErr" style="color:var(--danger);margin-top:10px;font-size:.88rem"></p>
+</div>
+
+<!-- ADMIN -->
+<div id="adminView" class="hidden">
+<div class="header">
+<span><a class="back-link" href="index.html">← Каталог</a></span>
+<button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
+</div>
+<div id="msgBox"></div>
+
+<!-- IMPORT SECTION -->
+<div class="form-card">
+<h3 style="margin-bottom:14px">📥 Массовый импорт JSON</h3>
+<textarea class="import-area" id="jsonArea" placeholder='Вставьте сюда JSON массив...'></textarea>
+<button class="btn" onclick="importJson()">Импортировать</button>
+</div>
+
+<!-- ADD FORM -->
+<div class="form-card">
+<h3 style="margin-bottom:14px" id="formTitle">➕ Добавить сервис</h3>
+<div class="form-group"><label>Название / Telegram-ник</label><input id="fName" placeholder="Например: @myvpnbot"></div>
+<div class="form-group"><label>Ссылка</label><input id="fLink" placeholder="https://t.me/... или URL"></div>
+<div class="form-group"><label>Категория</label>
+<select id="fCat"><option value="whitelist">С белым списком</option><option value="unknown">Статус неизвестен</option><option value="regular">Обычный VPN</option><option value="free">Бесплатный</option></select></div>
+<div class="form-group"><label>Дней пробного периода (пусто = не указано)</label><input id="fTrial" type="number" min="0" placeholder="Например: 7"></div>
+<div class="form-group"><label>Примечания</label><textarea id="fNotes" placeholder="Особенности, ограничения..."></textarea></div>
+<button class="btn" id="addBtn" onclick="addService()">Добавить</button>
+</div>
+
+<!-- LIST -->
+<h3 style="margin-bottom:12px">📋 Все записи (<span id="countLabel">0</span>)</h3>
+<div id="listContainer"><div style="text-align:center;padding:30px;color:var(--muted)">Загрузка...</div></div>
+</div>
+</div>
+
+<script>
+const API='https://vps-catalog-api.mqz.workers.dev';
+let token=null;
+
+function showMsg(text,type){document.getElementById('msgBox').innerHTML=`<div class="msg msg-${type==='ok'?'ok':'err'}">${text}</div>`;setTimeout(()=>document.getElementById('msgBox').innerHTML='',5000)}
+
+async function doLogin(){
+const p=document.getElementById('passInput').value;
+try{
+const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});
+const d=await r.json();
+if(d.success){token=p;document.getElementById('loginView').classList.add('hidden');document.getElementById('adminView').classList.remove('hidden');loadList()}
+else document.getElementById('loginErr').textContent='Неверный пароль'
+}catch(e){document.getElementById('loginErr').textContent='Ошибка соединения'}
+}
+
+function headers(){return{'Content-Type':'application/json','Authorization':'Bearer '+token}}
+
+async function loadList(){
+try{
+const r=await fetch(API+'/api/services');
+const items=await r.json();
+document.getElementById('countLabel').textContent=items.length;
+const c=document.getElementById('listContainer');
+if(!items.length){c.innerHTML='<div style="text-align:center;padding:30px;color:var(--muted)">Нет записей</div>';return}
+c.innerHTML=items.map(s=>`<div class="item-card"><strong>${esc(s.name)}</strong> <span style="font-size:.8rem;color:var(--muted)">[${s.category}]</span><br><span style="font-size:.82rem;color:var(--muted)">Дней: ${s.trial_days??'—'} | ${esc(s.link.substring(0,50))}${s.link.length>50?'...':''}</span>${s.notes?`<br><span style="font-size:.8rem;color:var(--muted)">${esc(s.notes)}</span>`:''}<div class="item-actions"><button class="btn btn-sm" onclick="editItem(${s.id},'${escAttr(s.name)}','${escAttr(s.link)}','${s.category}',${s.trial_days??''},'${escAttr(s.notes||'')}')">✏️ Изменить</button><button class="btn btn-sm btn-danger" onclick="delItem(${s.id},'${escAttr(s.name)}')">🗑 Удалить</button></div></div>`).join('')
+}catch(e){document.getElementById('listContainer').innerHTML='<div style="color:var(--danger);text-align:center;padding:20px">Ошибка загрузки</div>'}
+}
+
+async function importJson(){
+const raw=document.getElementById('jsonArea').value.trim();
+if(!raw){showMsg('Вставьте JSON данные','err');return}
+try{
+const data=JSON.parse(raw);
+if(!Array.isArray(data))throw new Error('Ожидается массив [...]');
+const r=await fetch(API+'/api/import',{method:'POST',headers:headers(),body:JSON.stringify(data)});
+const res=await r.json();
+if(res.added!==undefined){showMsg(`Успешно добавлено: ${res.added} записей!`,'ok');document.getElementById('jsonArea').value='';loadList()}
+else showMsg('Ошибка импорта','err')
+}catch(e){showMsg('Ошибка JSON: '+e.message,'err')}
+}
+
+async function addService(){
+const body={name:document.getElementById('fName').value.trim(),link:document.getElementById('fLink').value.trim(),category:document.getElementById('fCat').value,trial_days:parseInt(document.getElementById('fTrial').value)||null,notes:document.getElementById('fNotes').value.trim()};
+if(!body.name||!body.link){showMsg('Заполните название и ссылку','err');return}
+try{
+await fetch(API+'/api/services',{method:'POST',headers:headers(),body:JSON.stringify(body)});
+showMsg('Добавлено!','ok');
+['fName','fLink','fTrial','fNotes'].forEach(id=>document.getElementById(id).value='');
+loadList()
+}catch(e){showMsg('Ошибка при добавлении','err')}
+}
+
+async function delItem(id,name){
+if(!confirm(`Удалить "${name}"?`))return;
+try{await fetch(API+'/api/services/'+id,{method:'DELETE',headers:headers()});showMsg('Удалено','ok');loadList()}catch(e){showMsg('Ошибка удаления','err')}
+}
+
+function editItem(id,name,link,cat,trial,notes){
+document.getElementById('fName').value=name;document.getElementById('fLink').value=link;document.getElementById('fCat').value=cat;document.getElementById('fTrial').value=trial;document.getElementById('fNotes').value=notes;
+document.getElementById('formTitle').textContent='✏️ Редактирование: '+name;
+const btn=document.getElementById('addBtn');btn.textContent='Сохранить изменения';btn.onclick=async()=>{
+const body={name:document.getElementById('fName').value.trim(),link:document.getElementById('fLink').value.trim(),category:document.getElementById('fCat').value,trial_days:parseInt(document.getElementById('fTrial').value)||null,notes:document.getElementById('fNotes').value.trim()};
+if(!body.name||!body.link){showMsg('Заполните название и ссылку','err');return}
+try{await fetch(API+'/api/services/'+id,{method:'PUT',headers:headers(),body:JSON.stringify(body)});showMsg('Сохранено!','ok');resetForm();loadList()}catch(e){showMsg('Ошибка сохранения','err')}
+};
+window.scrollTo({top:0,behavior:'smooth'})
+}
+
+function resetForm(){
+['fName','fLink','fTrial','fNotes'].forEach(i=>document.getElementById(i).value='');
+document.getElementById('formTitle').textContent='➕ Добавить сервис';
+const btn=document.getElementById('addBtn');btn.textContent='Добавить';btn.onclick=addService;
+}
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function escAttr(t){return String(t).replace(/'/g,"\\'").replace(/"/g,'&quot;')}
+
+// Theme
+if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');
+document.getElementById('themeBtn').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light')};
+document.getElementById('passInput').onkeydown=e=>{if(e.key==='Enter')doLogin()};
+</script>
+</body>
+</html>
