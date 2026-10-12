@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VPN Каталог</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#f5f5f7;--card:#fff;--text:#1a1a2e;--muted:#6b7280;--accent:#4f46e5;--border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.08);--new-bg:#dcfce7;--new-text:#166534}
+.dark{--bg:#0f0f1a;--card:#1a1a2e;--text:#e5e7eb;--muted:#9ca3af;--accent:#818cf8;--border:#2d2d44;--shadow:0 1px 3px rgba(0,0,0,.3);--new-bg:#14532d;--new-text:#86efac}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+.container{max-width:720px;margin:0 auto;padding:20px 16px}
+header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+h1{font-size:1.5rem;font-weight:700}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.theme-btn{background:none;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer;font-size:.9rem;transition:all .2s;text-decoration:none;display:inline-flex;align-items:center}
+.theme-btn:hover{border-color:var(--accent)}
+.search-box{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:.95rem;margin-bottom:16px;outline:none;transition:border .2s}
+.search-box:focus{border-color:var(--accent)}
+.filters{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border:1px solid var(--border);border-radius:20px;background:var(--card);color:var(--text);cursor:pointer;font-size:.82rem;transition:all .2s;white-space:nowrap}
+.filter-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow);transition:transform .15s}
+.card:hover{transform:translateY(-1px)}
+.card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px}
+.card-name-wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card-name{font-weight:600;font-size:1rem;word-break:break-word}
+.new-badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:700;background:var(--new-bg);color:var(--new-text);cursor:help;position:relative}
+.new-badge:hover::after{content:attr(data-date);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:4px 8px;border-radius:6px;font-size:.7rem;white-space:nowrap;z-index:10;margin-bottom:4px}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.72rem;font-weight:600;white-space:nowrap}
+.badge-whitelist{background:#dcfce7;color:#166534}.badge-unknown{background:#fef3c7;color:#92400e}.badge-regular{background:#e0e7ff;color:#3730a3}.badge-free{background:#fee2e2;color:#991b1b}
+.dark .badge-whitelist{background:#14532d;color:#86efac}.dark .badge-unknown{background:#78350f;color:#fde68a}.dark .badge-regular{background:#312e81;color:#a5b4fc}.dark .badge-free{background:#7f1d1d;color:#fca5a5}
+.card-link{color:var(--accent);text-decoration:none;font-size:.88rem;word-break:break-all;display:inline-flex;align-items:center;gap:4px}
+.card-link:hover{text-decoration:underline}
+.card-notes{font-size:.82rem;color:var(--muted);margin-top:6px;line-height:1.4}
+.card-trial{font-size:.82rem;color:var(--muted);margin-top:4px}
+.updated{text-align:center;font-size:.75rem;color:var(--muted);margin-top:20px;padding:10px}
+.loading,.empty,.error{text-align:center;padding:40px;color:var(--muted);font-size:.95rem}
+.error{color:#dc2626}
+.warn-banner{background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:.82rem;color:#92400e}
+.dark .warn-banner{background:#451a03;color:#fde68a;border-color:#92400e}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>🛡️ VPN Каталог</h1>
+<div class="controls">
+<button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
+<a href="admin.html" class="theme-btn">⚙️ Админка</a>
+</div>
+</header>
+<input type="text" class="search-box" id="searchBox" placeholder="Поиск по названию...">
+<div class="filters" id="filters"></div>
+<div id="content"><div class="loading">Загрузка...</div></div>
+<div class="updated" id="updatedInfo"></div>
+</div>
+<script>
+const API='https://vps-catalog-api.mqz.workers.dev';
+const CATS=[{key:'all',label:'Все'},{key:'whitelist',label:'С белым списком'},{key:'unknown',label:'Статус неизвестен'},{key:'regular',label:'Обычные VPN'},{key:'free',label:'Бесплатные'}];
+let services=[],activeFilter='all';
+const catLabels={whitelist:'С белым списком',unknown:'Статус неизвестен',regular:'Обычный VPN',free:'Бесплатный'};
+const badgeClass={whitelist:'badge-whitelist',unknown:'badge-unknown',regular:'badge-regular',free:'badge-free'};
+
+function renderFilters(){
+document.getElementById('filters').innerHTML=CATS.map(c=>`<button class="filter-btn${activeFilter===c.key?' active':''}" data-cat="${c.key}">${c.label}</button>`).join('');
+document.querySelectorAll('.filter-btn').forEach(b=>b.onclick=()=>{activeFilter=b.dataset.cat;renderFilters();render()});
+}
+
+function isNew(dateStr){
+if(!dateStr)return false;
+const d=new Date(dateStr);
+const now=new Date();
+const diff=(now-d)/(1000*60*60*24);
+return diff<3; // Новое, если меньше 3 дней
+}
+
+function formatDate(dateStr){
+if(!dateStr)return '';
+const d=new Date(dateStr);
+return d.toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function render(){
+const q=document.getElementById('searchBox').value.toLowerCase();
+let list=services.filter(s=>{
+if(activeFilter!=='all'&&s.category!==activeFilter)return false;
+if(q&&!s.name.toLowerCase().includes(q))return false;
+return true;
+});
+const c=document.getElementById('content');
+if(!list.length){c.innerHTML=services.length?'<div class="empty">Ничего не найдено</div>':'<div class="empty">Каталог пуст</div>';return}
+c.innerHTML=list.map(s=>{
+const trial=s.trial_days!==null&&s.trial_days!==undefined?`${s.trial_days} дн.`:'Не указано';
+const warn=s.category==='free'?'<div class="warn-banner">️ Бесплатный VPN — используйте с осторожностью</div>':'';
+const newBadge=isNew(s.created_at)?`<span class="new-badge" data-date="Добавлен: ${formatDate(s.created_at)}"> Новое</span>`:'';
+return `${warn}<div class="card"><div class="card-header"><div class="card-name-wrap"><span class="card-name">${esc(s.name)}</span>${newBadge}</div><span class="badge ${badgeClass[s.category]}">${catLabels[s.category]}</span></div><div class="card-trial">Пробный период: ${trial}</div>${s.notes?`<div class="card-notes">${esc(s.notes)}</div>`:''}<a class="card-link" href="${esc(s.link)}" target="_blank" rel="noopener">Перейти →</a></div>`}).join('');
+}
+
+function esc(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+
+async function load(){
+try{
+const r=await fetch(API+'/api/services');
+if(!r.ok)throw new Error('Ошибка загрузки');
+services=await r.json();
+render();renderFilters();
+const latest=services.reduce((a,b)=>new Date(a.updated_at)>new Date(b.updated_at)?a:b,services[0]);
+if(latest)document.getElementById('updatedInfo').textContent='Обновлено: '+new Date(latest.updated_at).toLocaleString('ru-RU');
+}catch(e){document.getElementById('content').innerHTML='<div class="error">Ошибка загрузки данных. Попробуйте позже.</div>'}
+}
+
+document.getElementById('searchBox').oninput=render;
+if(localStorage.getItem('theme')==='dark')document.body.classList.add('dark');
+document.getElementById('themeBtn').onclick=()=>{document.body.classList.toggle('dark');localStorage.setItem('theme',document.body.classList.contains('dark')?'dark':'light')};
+load();
+</script>
+</body>
+</html>
