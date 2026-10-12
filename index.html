@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VPN Каталог</title>
+<title>VPN каталог с пробным периодом</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#f5f5f7;--card:#fff;--text:#1a1a2e;--muted:#6b7280;--accent:#4f46e5;--border:#e5e7eb;--shadow:0 1px 3px rgba(0,0,0,.08);--new-bg:#dcfce7;--new-text:#166534;--np-color:#dc2626;--visited-color:#16a34a}
@@ -47,10 +47,10 @@ h1{font-size:1.5rem;font-weight:700}
 <body>
 <div class="container">
 <header>
-<h1>️ VPN Каталог с пробным периодом</h1>
+<h1>🛡️ VPN каталог с пробным периодом</h1>
 <div class="controls">
 <button class="theme-btn" id="themeBtn">🌙 Тёмная</button>
-<a href="admin.html" class="theme-btn">️ Админ-панель</a>
+<!-- Кнопка админки убрана -->
 </div>
 </header>
 <input type="text" class="search-box" id="searchBox" placeholder="Поиск по названию...">
@@ -60,9 +60,9 @@ h1{font-size:1.5rem;font-weight:700}
 </div>
 <script>
 const API='https://vps-catalog-api.mqz.workers.dev'; // ЗАМЕНИ НА СВОЙ URL ЕСЛИ НУЖНО
-const CATS=[{key:'all',label:'Все'},{key:'whitelist',label:'С белым списком'},{key:'unknown',label:'Неизвестно (возможно есть БС)'},{key:'regular',label:'Обычные VPN'},{key:'free',label:'Бесплатные'}];
+const CATS=[{key:'all',label:'Все'},{key:'whitelist',label:'С белым списком'},{key:'unknown',label:'Неизвестно (возможно, есть БС)'},{key:'regular',label:'Обычные VPN'},{key:'free',label:'Бесплатные'}];
 let services=[],activeFilter='all';
-const catLabels={whitelist:'С белым списком',unknown:'Неизвестно (возможно есть БС)',regular:'Обычный VPN',free:'Бесплатный'};
+const catLabels={whitelist:'С белым списком',unknown:'Неизвестно (возможно, есть БС)',regular:'Обычный VPN',free:'Бесплатный'};
 const badgeClass={whitelist:'badge-whitelist',unknown:'badge-unknown',regular:'badge-regular',free:'badge-free'};
 
 // Загружаем посещенные ссылки из localStorage
@@ -88,8 +88,8 @@ return new Date(dateStr).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',y
 
 function formatNotes(notes){
 if(!notes)return '';
-// Выделяем NP! красным
-return notes.replace(/NP!/g, '<span class="np-highlight">NP!</span>');
+// Заменяем NP! на полное описание красным цветом
+return notes.replace(/NP!/g, '<span class="np-highlight">Бот уверяет, что есть обход БС, но мной это не проверено</span>');
 }
 
 function render(){
@@ -104,7 +104,7 @@ if(!list.length){c.innerHTML=services.length?'<div class="empty">Ничего н
 
 c.innerHTML=list.map(s=>{
 const trial=s.trial_days!==null&&s.trial_days!==undefined?`${s.trial_days} дн.`:'Не указано';
-const warn=s.category==='free'?'<div class="warn-banner">️ Бесплатный VPN — используйте с осторожностью</div>':'';
+const warn=s.category==='free'?'<div class="warn-banner">⚠️ Бесплатный VPN — используйте с осторожностью</div>':'';
 const newBadge=isNew(s.created_at)?`<span class="new-badge" title="Добавлен: ${formatDate(s.created_at)}">🆕 Новое</span>`:'';
 const visited=isVisited(s.id)?`<span class="visited-mark">✓ Переходили</span>`:'';
 const addedDate=`<span class="added-date">Добавлен: ${formatDate(s.created_at)}</span>`;
